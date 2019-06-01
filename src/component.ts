@@ -2,6 +2,7 @@ import kebabCase from "lodash.kebabcase";
 import debounce from "lodash.debounce";
 import { html, render, TemplateResult } from "lit-html";
 import { HooksMechanism, Frame } from "./hooks";
+import { cast } from "./common";
 
 function createPropsProxy(element: HTMLElement) {
   return new Proxy(element, {
@@ -23,7 +24,7 @@ function createPropsProxy(element: HTMLElement) {
   });
 }
 
-function record(fn: (props: object) => any) {
+function record<T extends object>(fn: (props: T) => any) {
   const attrs = new Set();
   const proxy = new Proxy(
     {},
@@ -34,17 +35,19 @@ function record(fn: (props: object) => any) {
     }
   );
   try {
-    fn(proxy);
+    fn(cast<T>(proxy));
   } catch {}
   return Array.from(attrs) as string[];
 }
+
+type RendererContext = (typeof html) & { root: ShadowRoot };
 
 export function createComponentFactory({
   own,
   release
 }: Pick<HooksMechanism, "own" | "release">) {
-  return function createComponent(
-    componentFn: (props: object) => TemplateResult,
+  return function createComponent<T extends object>(
+    componentFn: (this: RendererContext, props: T) => TemplateResult,
     componentName: string = kebabCase(componentFn.name)
   ) {
     if (!componentName.match(/-/)) {
@@ -52,23 +55,21 @@ export function createComponentFactory({
         "Component name must contain at least 2 capitalized words"
       );
     }
-    const observedAttributes = record(componentFn);
+    const observedAttributes = record<T>(componentFn);
     const cls = class extends HTMLElement {
-      private props: ReturnType<typeof createPropsProxy>;
+      private props: T;
       public hooks: Frame<any>[];
-      private renderer: typeof componentFn;
+      private rendererContext: RendererContext;
 
       constructor() {
         super();
         const values = {} as { [attribute: string]: any };
-        this.props = createPropsProxy(this);
+        this.props = cast<T>(createPropsProxy(this));
         this.hooks = [];
         this.attachShadow({ mode: "open" });
-        this.renderer = componentFn.bind(
-          Object.assign(html, {
-            root: this.shadowRoot
-          })
-        );
+        this.rendererContext = Object.assign(html, {
+          root: this.shadowRoot as ShadowRoot
+        });
         Object.defineProperties(
           this,
           observedAttributes.reduce(
@@ -96,7 +97,8 @@ export function createComponentFactory({
 
       render = debounce(() => {
         own(this);
-        render(this.renderer(this.props), this.shadowRoot as ShadowRoot);
+        render(componentFn.call(this.rendererContext, this.props), this
+          .shadowRoot as ShadowRoot);
         release();
       }, 16);
 

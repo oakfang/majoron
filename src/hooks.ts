@@ -1,4 +1,4 @@
-import { cast } from "./common";
+import { cast, Pair } from "./common";
 
 const INITIAL_RUN = Symbol("initial run marker");
 
@@ -58,14 +58,19 @@ function shouldReevaluate(
   return !areArraysOneLevelEqual(currentDeps, previousDeps);
 }
 
-const useState = (getHook: GetHook) => <T>(initialState: T) => {
-  const { ref, frame } = getHook<T>("state", initialState);
-  const set = (value: T) => {
-    frame.set(typeof value === "function" ? value(frame.get()) : value);
-    setTimeout(() => ref.render());
+const useState = (getHook: GetHook) =>
+  function<T>(
+    initialState: T
+  ): Pair<T, (value: T | ((value: T) => T)) => void> {
+    const { ref, frame } = getHook<T>("state", initialState);
+    const set = (value: T | ((value: T) => T)) => {
+      frame.set((typeof value === "function"
+        ? (value as ((value: T) => T))(frame.get())
+        : value) as T);
+      setTimeout(() => ref.render());
+    };
+    return [frame.get(), set] as [T, typeof set];
   };
-  return [frame.get(), set];
-};
 
 const useMemo = (getHook: GetHook) => <T>(factory: () => T, deps?: any[]) => {
   const { frame } = getHook<{ value: T | typeof INITIAL_RUN; deps?: any[] }>(
