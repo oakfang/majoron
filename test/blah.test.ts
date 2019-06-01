@@ -1,8 +1,8 @@
-import define from "../src";
+import define, { defineAs } from "../src";
 
 describe("fuck", () => {
   it("works", () => {
-    define(function MyApp({ x }: { x: number }) {
+    defineAs(function MyApp({ x }: { x: number }) {
       return this`<p>${x}</p>`;
     });
     define.MyFoo(function() {

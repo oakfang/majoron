@@ -48,7 +48,7 @@ export function createComponentFactory({
   own,
   release
 }: Pick<HooksMechanism, "own" | "release">) {
-  function createComponent<T extends object>(
+  function defineAs<T extends object>(
     componentFn: (this: RendererContext, props: T) => TemplateResult,
     componentName: string = kebabCase(componentFn.name)
   ) {
@@ -125,14 +125,16 @@ export function createComponentFactory({
     };
     window.customElements.define(componentName, cls);
   }
-  return cast<
-    typeof createComponent & { [key: string]: typeof createComponent }
-  >(
-    new Proxy(createComponent, {
-      get(component, componentName: string) {
-        return (fn: FirstParameter<typeof createComponent>) =>
-          component(fn, kebabCase(componentName));
+  const define = cast<{ [key: string]: typeof defineAs }>(
+    new Proxy(
+      {},
+      {
+        get(_, componentName: string) {
+          return (fn: FirstParameter<typeof defineAs>) =>
+            defineAs(fn, kebabCase(componentName));
+        }
       }
-    })
+    )
   );
+  return { defineAs, define };
 }
