@@ -4,6 +4,8 @@ import { html, render, TemplateResult } from "lit-html";
 import { HooksMechanism, Frame } from "./hooks";
 import { cast } from "./common";
 
+type FirstParameter<T> = T extends (arg: infer T) => any ? T : never;
+
 function createPropsProxy(element: HTMLElement) {
   return new Proxy(element, {
     set() {
@@ -46,7 +48,7 @@ export function createComponentFactory({
   own,
   release
 }: Pick<HooksMechanism, "own" | "release">) {
-  return function createComponent<T extends object>(
+  function createComponent<T extends object>(
     componentFn: (this: RendererContext, props: T) => TemplateResult,
     componentName: string = kebabCase(componentFn.name)
   ) {
@@ -122,5 +124,15 @@ export function createComponentFactory({
       }
     };
     window.customElements.define(componentName, cls);
-  };
+  }
+  return cast<
+    typeof createComponent & { [key: string]: typeof createComponent }
+  >(
+    new Proxy(createComponent, {
+      get(component, componentName: string) {
+        return (fn: FirstParameter<typeof createComponent>) =>
+          component(fn, kebabCase(componentName));
+      }
+    })
+  );
 }
