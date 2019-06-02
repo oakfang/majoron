@@ -64,10 +64,13 @@ const useState = (getHook: GetHook) =>
   ): Pair<T, (value: T | ((value: T) => T)) => void> {
     const { ref, frame } = getHook<T>("state", initialState);
     const set = (value: T | ((value: T) => T)) => {
-      frame.set((typeof value === "function"
-        ? (value as ((value: T) => T))(frame.get())
-        : value) as T);
-      setTimeout(() => ref.render());
+      const currentState = frame.get();
+      const newState =
+        typeof value === "function"
+          ? (value as ((value: T) => T))(currentState)
+          : (value as T);
+      frame.set(newState);
+      ref.render();
     };
     return [frame.get(), set] as [T, typeof set];
   };
@@ -125,7 +128,12 @@ export function createHooksMechanism() {
       }
     }
   };
-  const release = () => ctx.pop();
+  const release = () => {
+    ctx.pop();
+    while (hooksStack.length) {
+      hooksStack.pop();
+    }
+  };
   const getHook = <T>(frameType: FrameType, initialFrameValue: T) => {
     const ref = current();
     if (!hooksStack.length) {

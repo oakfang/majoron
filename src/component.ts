@@ -1,5 +1,4 @@
 import kebabCase from "lodash.kebabcase";
-import debounce from "lodash.debounce";
 import { html, render, TemplateResult } from "lit-html";
 import { HooksMechanism, Frame } from "./hooks";
 import { cast } from "./common";
@@ -58,13 +57,16 @@ export function createComponentFactory({
       );
     }
     const observedAttributes = record<T>(componentFn);
+    release();
     const cls = class extends HTMLElement {
       private props: T;
+      private pending: boolean;
       public hooks: Frame<any>[];
       private rendererContext: RendererContext;
 
       constructor() {
         super();
+        this.pending = false;
         const values = {} as { [attribute: string]: any };
         this.props = cast<T>(createPropsProxy(this));
         this.hooks = [];
@@ -97,12 +99,23 @@ export function createComponentFactory({
         return observedAttributes;
       }
 
-      render = debounce(() => {
+      _render() {
         own(this);
         render(componentFn.call(this.rendererContext, this.props), this
           .shadowRoot as ShadowRoot);
         release();
-      }, 16);
+      }
+
+      render() {
+        if (this.pending) {
+          return;
+        }
+        this.pending = true;
+        requestAnimationFrame(() => {
+          this._render();
+          this.pending = false;
+        });
+      }
 
       connectedCallback() {
         this.render();
