@@ -128,14 +128,12 @@ export function createHooksMechanism() {
       }
     }
   };
-  const release = () => {
-    ctx.pop();
-    while (hooksStack.length) {
-      hooksStack.pop();
-    }
-  };
+  const release = () => ctx.pop();
   const getHook = <T>(frameType: FrameType, initialFrameValue: T) => {
     const ref = current();
+    if (!ref) {
+      throw 0;
+    }
     if (!hooksStack.length) {
       const frame = makeFrame(frameType, initialFrameValue);
       hooksStack.push(frame);

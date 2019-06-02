@@ -57,7 +57,6 @@ export function createComponentFactory({
       );
     }
     const observedAttributes = record<T>(componentFn);
-    release();
     const cls = class extends HTMLElement {
       private props: T;
       private pending: boolean;
