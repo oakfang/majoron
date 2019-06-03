@@ -1,0 +1,19 @@
+{
+  "name": "majoron",
+  "version": "0.1.4",
+  "main": "dist/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oakfang/majoron.git"
+  },
+  "author": "Alon Niv",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/oakfang/majoron/issues"
+  },
+  "homepage": "https://github.com/oakfang/majoron#readme",
+  "private": true,
+  "devDependencies": {
+    "lerna": "^3.14.1"
+  }
+}

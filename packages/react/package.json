@@ -1,0 +1,39 @@
+{
+  "name": "@majoron/react",
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oakfang/majoron.git"
+  },
+  "author": "Alon Niv",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/oakfang/majoron/issues"
+  },
+  "homepage": "https://github.com/oakfang/majoron#readme",
+  "umd:main": "dist/react.umd.production.js",
+  "module": "dist/react.es.production.js",
+  "typings": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "start": "tsdx watch",
+    "build": "tsdx build",
+    "prepare": "npm run build"
+  },
+  "devDependencies": {
+    "tsdx": "^0.6.1",
+    "typescript": "^3.5.1"
+  },
+  "peerDependencies": {
+    "react": "^16.8.6"
+  },
+  "dependencies": {
+    "@types/react": "^16.8.19"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
