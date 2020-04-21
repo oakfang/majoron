@@ -41,7 +41,7 @@ function record<T extends object>(fn: (props: T) => any) {
   return Array.from(attrs) as string[];
 }
 
-type RendererContext = (typeof html) & { root: ShadowRoot };
+type RendererContext = typeof html & { root: ShadowRoot };
 
 export function createComponentFactory({
   own,
@@ -70,29 +70,26 @@ export function createComponentFactory({
         this.props = cast<T>(createPropsProxy(this));
         this.hooks = [];
         this.attachShadow({ mode: 'open' });
-        this.rendererContext = Object.assign(html, {
+        this.rendererContext = Object.assign(html.bind(null), {
           root: this.shadowRoot as ShadowRoot,
         });
         Object.defineProperties(
           this,
-          observedAttributes.reduce(
-            (props, attribute) => {
-              props[attribute] = {
-                get: () => {
-                  return values[attribute];
-                },
-                set: value => {
-                  if (values[attribute] !== value) {
-                    values[attribute] = value;
-                    this.render();
-                  }
-                  return true;
-                },
-              };
-              return props;
-            },
-            {} as PropertyDescriptorMap
-          )
+          observedAttributes.reduce((props, attribute) => {
+            props[attribute] = {
+              get: () => {
+                return values[attribute];
+              },
+              set: value => {
+                if (values[attribute] !== value) {
+                  values[attribute] = value;
+                  this.render();
+                }
+                return true;
+              },
+            };
+            return props;
+          }, {} as PropertyDescriptorMap)
         );
       }
 
@@ -102,8 +99,10 @@ export function createComponentFactory({
 
       _render() {
         own(this);
-        render(componentFn.call(this.rendererContext, this.props), this
-          .shadowRoot as ShadowRoot);
+        render(
+          componentFn.call(this.rendererContext, this.props),
+          this.shadowRoot as ShadowRoot
+        );
         release();
       }
 
